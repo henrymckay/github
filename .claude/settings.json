@@ -3,5 +3,21 @@
     "deny": [
       "mcp__*"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/load-plugins.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "manage-project@henrymckay": true,
+    "write-code@henrymckay": true
   }
 }
