@@ -1,0 +1,68 @@
+# Throwaway proof for sweep 15 of the plugin marketplace: the launcher's and the guard's
+# suites and the launcher's dry run on a GitHub-hosted Linux runner. Needs no model.
+name: sweep15 linux checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugins-ref:
+        description: The plugins' commit
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: henrymckay/claude
+          ref: ${{ inputs.plugins-ref }}
+          path: plugins
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+
+      - name: Runner facts
+        run: |
+          uname -a
+          cat /etc/os-release | head -2
+          echo "apparmor_restrict_unprivileged_userns=$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo absent)"
+          echo "ptrace_scope=$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || echo absent)"
+          /usr/bin/python3 --version
+          sudo -n true && echo "passwordless sudo outside any sandbox"
+          echo "PATH=$PATH"
+
+      - name: Suites
+        working-directory: plugins
+        run: |
+          uv run --script plugins/manage-project/skills/secure-project/scripts/test_guard.py -q
+          uv run --script plugins/manage-project/skills/secure-project/scripts/test_grant.py -q
+          uv run --script plugins/manage-project/skills/choose-model/scripts/test_costs.py -q
+          uv run --script plugins/manage-project/skills/build-project/scripts/test_launch.py -q
+
+      - name: Launcher dry run on a throwaway project
+        run: |
+          mkdir -p "$HOME/throwaway" && cd "$HOME/throwaway"
+          git init -q -b main
+          printf 'Say hello.\n' > "$RUNNER_TEMP/prompt.md"
+          uv run --script "$GITHUB_WORKSPACE/plugins/plugins/manage-project/skills/build-project/scripts/launch.py" "$RUNNER_TEMP/prompt.md" --budget-usd 0.5 --model haiku --dry-run
+          profile=$(ls "$HOME"/.cache/claude-runs/*/profile.json)
+          python3 -c 'import json,sys; f=json.load(open(sys.argv[1]))["sandbox"]["filesystem"]; print("denyRead", f["denyRead"]); print("denyWrite", f["denyWrite"])' "$profile"
+
+      - name: Bubblewrap with the sandbox's own isolation
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap socat
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            bwrap --ro-bind / / --dev /dev --proc /proc --unshare-all true && echo "bwrap works before the AppArmor profile" || echo "bwrap refused before the AppArmor profile"
+            printf '%s\n' 'abi <abi/4.0>,' 'include <tunables/global>' 'profile bwrap /usr/bin/bwrap flags=(unconfined) {' '  userns,' '}' | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo systemctl reload apparmor
+          fi
+          bwrap --ro-bind / / --dev /dev --proc /proc --unshare-all --new-session --die-with-parent sh -c 'sudo -n true && echo "sudo gained root inside bwrap" || echo "sudo refused inside bwrap"; ls /proc | grep -c "^[0-9]" | sed "s/^/processes visible inside: /"'
