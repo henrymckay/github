@@ -55,7 +55,7 @@ concurrency:
 
 env:
   PLUGINS_REPOSITORY: henrymckay/claude
-  PLUGINS_REF: 16f06bde6a4521e0a64110b560e8a386fae8e07b
+  PLUGINS_REF: 9f9f8b8db60044b9a64dffdc92381f43cc96ec7b
 
 jobs:
   run:
