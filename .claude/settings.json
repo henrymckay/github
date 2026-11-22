@@ -1,0 +1,21 @@
+{
+  "extraKnownMarketplaces": {
+    "henrymckay": { "source": { "source": "github", "repo": "henrymckay/claude" } }
+  },
+  "enabledPlugins": {
+    "manage-project@henrymckay": true,
+    "write-code@henrymckay": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "(claude plugin marketplace add henrymckay/claude && claude plugin install manage-project@henrymckay --scope project && claude plugin install write-code@henrymckay --scope project) > /tmp/plugin-install.log 2>&1; echo \"plugin install exit $?\" >> /tmp/plugin-install.log; true"
+          }
+        ]
+      }
+    ]
+  }
+}
