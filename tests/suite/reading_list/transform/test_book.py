@@ -55,6 +55,7 @@ def test_when_parse_title_only_then_defaults_fill_the_rest() -> None:
         ({"title": "Dune", "pages": "0"}, "pages"),
         ({"title": "Dune", "pages": "10", "pages_read": "11"}, "pages_read"),
         ({"title": "Dune", "rating": "6"}, "rating"),
+        ({"title": "Dune", "pages": "1000001"}, "pages"),
         ({"title": "Dune", "rating": "0"}, "rating"),
         ({"title": "Dune", "status": "lost"}, "status"),
     ],
@@ -177,6 +178,33 @@ def test_when_choose_to_read_with_pages_read_then_choice_honoured(
         today=today,
     )
     assert (settled.status, settled.pages_read) == (Status.TO_READ, 40)
+
+
+def test_when_choose_reading_with_every_page_read_then_finished(
+    make_draft: MakeDraft, make_book: MakeBook, today: datetime.date
+) -> None:
+    settled, finished_on = transform.settle(
+        make_draft(status=Status.READING, pages_read=300),
+        before=make_book(status=Status.TO_READ, pages_read=0),
+        today=today,
+    )
+    assert (settled.status, finished_on) == (Status.FINISHED, today)
+
+
+def test_when_finished_book_page_count_raised_then_stays_finished(
+    make_draft: MakeDraft, make_book: MakeBook, today: datetime.date
+) -> None:
+    first = datetime.date(2026, 1, 1)
+    settled, finished_on = transform.settle(
+        make_draft(status=Status.FINISHED, pages=310, pages_read=300),
+        before=make_book(status=Status.FINISHED, pages_read=300, finished_on=first),
+        today=today,
+    )
+    assert (settled.status, settled.pages_read, finished_on) == (
+        Status.FINISHED,
+        310,
+        first,
+    )
 
 
 def test_when_lower_progress_on_finished_book_then_reading_again(

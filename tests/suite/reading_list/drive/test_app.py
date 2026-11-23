@@ -135,7 +135,7 @@ def test_when_missing_book_then_not_found_page(
     client: fastapi.testclient.TestClient,
 ) -> None:
     page = client.get("/books/99")
-    assert (page.status_code, "isn't on your list" in page.text) == (404, True)
+    assert (page.status_code, "That page isn" in page.text) == (404, True)
 
 
 def test_when_search_then_only_matches_listed(
@@ -212,3 +212,63 @@ def test_when_static_requested_then_served(
     client: fastapi.testclient.TestClient,
 ) -> None:
     assert client.get("/static/app.css").status_code == 200
+
+
+def test_when_row_saved_after_failed_add_then_library_kept(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    book_id = _add(client)
+    failed = client.post("/books", data=_DUNE | {"title": ""})
+    assert 'name="back" value="/"' in failed.text
+    response = client.post(
+        f"/books/{book_id}/progress",
+        data={"pages_read": "5", "status": "reading", "back": "/"},
+    )
+    assert response.status_code == 200
+
+
+def test_when_row_saved_during_search_then_search_kept(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    book_id = _add(client)
+    page = client.get("/", params={"q": "dune"}).text
+    assert 'name="back" value="/?q=dune"' in page
+    response = client.post(
+        f"/books/{book_id}/progress",
+        data={"pages_read": "999", "status": "reading", "back": "/?q=zzz"},
+    )
+    assert "No books match" in response.text
+
+
+def test_when_progress_without_fields_then_stored_values_kept(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    book_id = _add(client, pages_read="50")
+    client.post(f"/books/{book_id}/progress", data={})
+    book = client.get(f"/api/books/{book_id}").json()
+    assert (book["pages_read"], book["status"]) == (50, "reading")
+
+
+def test_when_huge_numbers_then_rejected_not_crashed(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    added = client.post("/books", data=_DUNE | {"pages": "99999999999999999999"})
+    page = client.get("/books/99999999999999999999")
+    assert (added.status_code, page.status_code) == (422, 404)
+
+
+def test_when_unknown_page_then_not_found_page(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    pages = [client.get("/nope"), client.get("/books/abc")]
+    assert [(page.status_code, "That page isn" in page.text) for page in pages] == [
+        (404, True),
+        (404, True),
+    ]
+
+
+def test_when_api_bad_id_then_json_errors(
+    client: fastapi.testclient.TestClient,
+) -> None:
+    responses = [client.get("/api/books/abc"), client.get("/api/nope")]
+    assert [response.status_code for response in responses] == [422, 404]

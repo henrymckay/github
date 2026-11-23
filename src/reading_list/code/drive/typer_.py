@@ -22,6 +22,7 @@ def _find_default_db() -> pathlib.Path:
 
 def _is_port_free(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             probe.bind((_HOST, port))
         except OSError as failure:

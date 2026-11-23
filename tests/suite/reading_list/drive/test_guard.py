@@ -13,6 +13,9 @@ from reading_list.code.drive.fastapi_ import guard
         ("evil.example:8000", "GET", None, None, False),
         ("127.0.0.1:8000", "POST", "https://evil.example", None, False),
         ("127.0.0.1:8000", "POST", None, "cross-site", False),
+        ("127.0.0.1:8000", "POST", None, "same-site", False),
+        ("127.0.0.1:8000", "POST", "http://127.0.0.1:8000", "same-origin", True),
+        ("localhost:8000", "POST", "http://localhost:3000", None, False),
     ],
 )
 def test_when_is_allowed_then_only_local_pages_pass(

@@ -44,7 +44,7 @@
             </div>
           </div>
           <form class="book-update" method="post" action="/books/{{ book.id }}/progress">
-            <input type="hidden" name="back" value="{{ path }}">
+            <input type="hidden" name="back" value="{{ back }}">
             <label class="field compact">
               <span>Pages read</span>
               <input name="pages_read" value="{{ book.pages_read }}" inputmode="numeric" pattern="[0-9]*" aria-label="Pages read for {{ book.title }}">

@@ -25,6 +25,8 @@ create table if not exists book (
 )
 """
 
+_LARGEST_ID: typing.Final = 2**63 - 1
+
 _COLUMNS: typing.Final = (
     "id, title, author, pages, pages_read, status, rating, notes, added_on, finished_on"
 )
@@ -44,6 +46,11 @@ def _parse_row(row: sqlite3.Row) -> transform.Book:
         status=transform.Status(row["status"]),
         title=row["title"],
     )
+
+
+def _check_id(book_id: int) -> None:
+    if not 0 < book_id <= _LARGEST_ID:
+        raise error.AbsentError(f"No book with id {book_id}.")
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
@@ -102,6 +109,7 @@ class Store:
         :param book_id: The book's id.
         :raises error.AbsentError: If there is no such book.
         """
+        _check_id(book_id)
         with self._connect() as connection:
             cursor = connection.execute("delete from book where id = ?", (book_id,))
         if cursor.rowcount == 0:
@@ -114,6 +122,7 @@ class Store:
         :returns: The book.
         :raises error.AbsentError: If there is no such book.
         """
+        _check_id(book_id)
         with self._connect() as connection:
             row = connection.execute(
                 f"select {_COLUMNS} from book where id = ?", (book_id,)

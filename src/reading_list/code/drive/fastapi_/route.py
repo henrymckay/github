@@ -2,6 +2,7 @@
 
 import datetime
 import typing
+import urllib.parse
 
 import fastapi
 import fastapi.responses
@@ -33,6 +34,15 @@ def _parse_status(text: str) -> transform.Status | None:
         return None
 
 
+def _build_back(*, order: str, query: str, status: str) -> str:
+    kept = {
+        key: value
+        for key, value in {"q": query, "status": status, "sort": order}.items()
+        if value
+    }
+    return f"/?{urllib.parse.urlencode(kept)}" if kept else "/"
+
+
 def _render_library(
     request: fastapi.Request,
     *,
@@ -54,6 +64,7 @@ def _render_library(
         request,
         "library.html",
         {
+            "back": _build_back(order=order, query=query, status=status),
             "books": books,
             "form": form or {},
             "order": chosen_order,
@@ -187,12 +198,13 @@ def record_progress(
 ) -> fastapi.responses.Response:
     """Record pages read and status from the library row."""
     book = operate.get_book(book_id, store=store)
+    target = back if back.startswith("/") and not back.startswith("//") else "/"
     try:
         parsed = transform.parse_draft(
             {
                 "pages": "" if book.pages is None else str(book.pages),
-                "pages_read": pages_read,
-                "status": status,
+                "pages_read": pages_read.strip() or str(book.pages_read),
+                "status": status or book.status.value,
                 "title": book.title,
             }
         )
@@ -204,13 +216,16 @@ def record_progress(
             today=today,
         )
     except error.InvalidError as failure:
+        kept = urllib.parse.parse_qs(urllib.parse.urlsplit(target).query)
         return _render_library(
             request,
+            order=kept.get("sort", [""])[0],
+            query=kept.get("q", [""])[0],
             row_problem=(book_id, str(failure)),
+            status=kept.get("status", [""])[0],
             status_code=422,
             store=store,
         )
-    target = back if back.startswith("/") and not back.startswith("//") else "/"
     return fastapi.responses.RedirectResponse(
         f"{target}#book-{book_id}", status_code=303
     )

@@ -10,6 +10,7 @@ from reading_list.code import error
 
 _TITLE_LIMIT = 300
 _NOTES_LIMIT = 5000
+_COUNT_LIMIT = 1_000_000
 
 
 class Status(enum.StrEnum):
@@ -67,6 +68,9 @@ def _parse_count(
         return None
     if value < 0:
         problems[field] = f"{label} can't be negative."
+        return None
+    if value > _COUNT_LIMIT:
+        problems[field] = f"{label} must be at most {_COUNT_LIMIT:,}."
         return None
     return value
 
@@ -155,20 +159,22 @@ def pick_progress(book: Book | Draft) -> float | None:
 def _settle_chosen(draft: Draft, *, before: Book | None) -> Draft:
     if draft.status is Status.FINISHED:
         return copy.replace(draft, pages_read=draft.pages or draft.pages_read)
-    if (
-        before is not None
-        and before.status is Status.FINISHED
-        and draft.pages_read == draft.pages
-    ):
+    reopened = before is not None and before.status is Status.FINISHED
+    if reopened and draft.pages_read == draft.pages:
         return copy.replace(draft, pages_read=0)
+    if not reopened and draft.status is Status.READING:
+        return _settle_by_progress(draft, before=before)
     return draft
 
 
-def _settle_by_progress(draft: Draft) -> Draft:
+def _settle_by_progress(draft: Draft, *, before: Book | None) -> Draft:
     if draft.pages is not None and draft.pages_read >= draft.pages:
         return copy.replace(draft, status=Status.FINISHED)
     if draft.status is Status.FINISHED and draft.pages is not None:
-        return copy.replace(draft, status=Status.READING)
+        went_back = before is not None and draft.pages_read < before.pages_read
+        if went_back:
+            return copy.replace(draft, status=Status.READING)
+        return copy.replace(draft, pages_read=draft.pages)
     if draft.status is Status.TO_READ and draft.pages_read > 0:
         return copy.replace(draft, status=Status.READING)
     return draft
@@ -183,7 +189,9 @@ def settle(
     finishing fills the pages read, and leaving a finished book with every
     page read starts it again from 0.
     Otherwise progress decides: every page read finishes the book, some pages
-    read start it, and fewer than every page reopens a finished one.
+    read start it, fewer pages read than before reopen a finished one, and a
+    finished book whose page count changed stays finished with every page read.
+    Choosing reading with every page read finishes the book too.
 
     :param draft: What the person entered.
     :param before: The book as stored, or None for a new book.
@@ -196,7 +204,9 @@ def settle(
         else draft.status is not before.status
     )
     settled = (
-        _settle_chosen(draft, before=before) if chosen else _settle_by_progress(draft)
+        _settle_chosen(draft, before=before)
+        if chosen
+        else _settle_by_progress(draft, before=before)
     )
     if settled.status is not Status.FINISHED:
         return settled, None

@@ -85,3 +85,11 @@ def test_when_reopened_then_books_persist(
 ) -> None:
     sqlite_.Store(path=db_path).add_book(make_draft(), added_on=today, finished_on=None)
     assert len(sqlite_.Store(path=db_path).list_books()) == 1
+
+
+@pytest.mark.parametrize("book_id", [0, 2**63, 10**20])
+def test_when_get_out_of_range_id_then_absent(
+    sqlite_store: sqlite_.Store, book_id: int
+) -> None:
+    with pytest.raises(error.AbsentError):
+        sqlite_store.get_book(book_id)

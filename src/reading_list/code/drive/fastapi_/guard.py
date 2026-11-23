@@ -8,6 +8,7 @@ import starlette.types
 
 _HOSTS: typing.Final = frozenset({"127.0.0.1", "localhost", "[::1]"})
 _SAFE: typing.Final = frozenset({"GET", "HEAD", "OPTIONS"})
+_SAME_SITE: typing.Final = frozenset({"same-origin", "none"})
 
 
 def _host_name(host: str) -> str:
@@ -17,8 +18,9 @@ def _host_name(host: str) -> str:
 def is_allowed(*, host: str, method: str, origin: str | None, site: str | None) -> bool:
     """Return whether a request may reach the app.
 
-    A loopback Host stops a DNS-rebound name; a write must come from no
-    origin or a loopback one, so another website cannot post to the app.
+    A loopback Host stops a DNS-rebound name; a write must come from this
+    very origin, port included, so no other site, even one on another local
+    port, can post to the app.
 
     :param host: The Host header.
     :param method: The HTTP method.
@@ -30,11 +32,11 @@ def is_allowed(*, host: str, method: str, origin: str | None, site: str | None) 
         return False
     if method in _SAFE:
         return True
-    if site == "cross-site":
+    if site is not None and site not in _SAME_SITE:
         return False
     if origin is None:
         return True
-    return _host_name(urllib.parse.urlsplit(origin).netloc) in _HOSTS
+    return urllib.parse.urlsplit(origin).netloc == host
 
 
 class Guard:
