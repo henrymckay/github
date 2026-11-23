@@ -1,1 +1,8 @@
 command,commit,date,line,printed,result,stage
+uv run coverage run -m pytest,c82867e,2026-11-23,R1,"108 passed; add, edit, delete tests pass",pass,acceptance
+uv run coverage run -m pytest,c82867e,2026-11-23,R2,"status rule and progress tests pass; browser: Dune 103 / 412 pages · 25% Reading",pass,acceptance
+uv run coverage run -m pytest,c82867e,2026-11-23,R3,"search and sort tests pass; browser live search 'clarke' left 1 row (Piranesi)",pass,acceptance
+uv run coverage run -m pytest,c82867e,2026-11-23,R4,"stats tests pass; browser tiles 2 | 1 | 1 | 375",pass,acceptance
+git clone && uv run reading-list --port 8790,c82867e,2026-11-23,R5,"fresh clone installed CPython 3.15.2 and 45 packages and served; restart straight after stop served again",pass,acceptance
+uv run coverage report,c82867e,2026-11-23,coverage,"package 99% (floor 99); core transform/operate/port/error 100% branches",pass,acceptance
+uv run ruff check && uv run pyright,c82867e,2026-11-23,Acceptance,"ruff clean; pyright strict 0 errors; screenshots 1440 and 390 px light and dark, no console errors, no sideways scroll",pass,acceptance

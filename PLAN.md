@@ -95,6 +95,7 @@ Options `--port` and `--db`; exit 0 on Ctrl+C, 2 on a bad option, 1 when the por
 | POST | `/books/{id}/delete` | delete |
 | GET | `/stats` | Stats |
 | GET | `/api/books` | the library as JSON, same query as `/` |
+| GET | `/api/books/{id}` | one book as JSON, 404 problem body if absent |
 | GET | `/api/stats` | the stats as JSON |
 
 - **Library** — answers "what am I reading and how far along?": search box, status filter and sort on one row, a collapsible add form, then one row per book with title, author, status chip, progress bar with `120 / 350 pages · 34%`, an inline pages-read field and edit; empty state "No books yet — add the first one above", and "No books match" with a clear link for a search.
@@ -106,20 +107,21 @@ Options `--port` and `--db`; exit 0 on Ctrl+C, 2 on a bad option, 1 when the por
 
 - **App** — the owner's machine only, bound to `127.0.0.1`; $0.
 - **Teardown** — delete the repo checkout and `books.db`; nothing else is created.
-- **Threat model** — no secret; the risk is another website or a DNS-rebound name posting to the local server, stopped by rejecting any `Host` outside loopback and any cross-origin `POST` (secure-project, Guard what is served); stored text is escaped by Jinja autoescape.
+- **Threat model** — no secret; the risk is another website or a DNS-rebound name posting to the local server, stopped by rejecting any `Host` outside loopback and any `POST` whose `Origin` is not this exact origin, port included, or whose `Sec-Fetch-Site` is not `same-origin` (secure-project, Guard what is served); stored text is escaped by Jinja autoescape.
 - **Unattended runs** — this build ran in a cloud session on this repository alone, with no secret; the app itself runs only when the owner starts it.
 
 ### Errors
 
 - **Empty title, pages read past the page count, rating outside 1–5** — the form is shown again with the message beside the field and status 422.
-- **Unknown book id** — 404 page with a link back to the Library.
+- **Unknown book id or path** — 404 page with a link back to the Library; under `/api/`, a JSON body.
+- **A count over 1,000,000** — the form is shown again with the message, status 422.
 - **Port in use** — exit 1: "Port 8000 is in use — try `uv run reading-list --port 8001`".
 
 ### Decisions
 
 - **D1 Server-rendered HTML with FastAPI and Jinja2** over a Vite and React front end — one language, nothing to build, forms work without JavaScript; cost: no client-side state, fine for one user; overrides `write-entry-points`, Dashboard, whose pick is for data dashboards (proposed).
 - **D2 SQLite through the standard library** over Parquet or JSON — small single-writer state (store-data); cost: none at this size (by precedent).
-- **D3 Status follows progress** — pages read above 0 moves `to read` to `reading`; reaching the page count finishes the book and stamps `finished_on`; marking finished fills pages read (proposed).
+- **D3 Status follows progress** — pages read above 0 moves `to read` to `reading`; reaching the page count finishes the book and stamps `finished_on`, also when `reading` is picked; marking finished fills pages read; lowering pages read reopens a finished book, while changing only its page count keeps it finished (proposed).
 - **D4 Search in Python over all books** over SQL `LIKE` or FTS5 — a personal list is hundreds of rows, so no index or speed budget is needed (proposed).
 - **D5 Chart as inline SVG drawn by the template** over ECharts — one bar series needs no library or JavaScript; overrides `write-entry-points`, Dashboard, on the chart library (proposed).
 - **D6 Small build path, built in the main session** over the full path, although the data is classed personal — nothing leaves the machine and there is no credential; the final review by a fresh agent and the acceptance run still run; overrides `build-project`, Pick the path (proposed).
@@ -138,8 +140,8 @@ Options `--port` and `--db`; exit 0 on Ctrl+C, 2 on a bad option, 1 when the por
 
 ### Milestones
 
-- [ ] **M1 Core and store** — R1 to R4 rules; done when the core is at 100% branch coverage and the store round-trips.
-- [ ] **M2 Web app** — R1 to R5; done when the R5 run passes and the screenshots read right.
+- [x] **M1 Core and store** — R1 to R4 rules; done when the core is at 100% branch coverage and the store round-trips.
+- [x] **M2 Web app** — R1 to R5; done when the R5 run passes and the screenshots read right.
 
 ## Open
 
