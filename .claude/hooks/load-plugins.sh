@@ -12,9 +12,9 @@
 [ "${CLAUDE_CODE_REMOTE:-}" = true ] || exit 0
 
 repo='henrymckay/claude'
-sha='463a0601f65e9863e75fe50547ed6f9a67e4829c'
+sha='8888efd47d319125ce86f5f54d68fc025f83f09f'
 marketplace='henrymckay'
-plugins='manage-project write-code'
+plugins='design-project maintain-plugin manage-project run-project structure-app write-code'
 
 settings="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/settings.json"
 saved=

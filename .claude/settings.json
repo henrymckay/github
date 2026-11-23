@@ -17,7 +17,11 @@
     ]
   },
   "enabledPlugins": {
+    "design-project@henrymckay": true,
+    "maintain-plugin@henrymckay": true,
     "manage-project@henrymckay": true,
+    "run-project@henrymckay": true,
+    "structure-app@henrymckay": true,
     "write-code@henrymckay": true
   }
 }
