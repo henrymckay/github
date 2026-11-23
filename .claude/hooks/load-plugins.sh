@@ -12,7 +12,7 @@
 [ "${CLAUDE_CODE_REMOTE:-}" = true ] || exit 0
 
 repo='henrymckay/claude'
-sha='8888efd47d319125ce86f5f54d68fc025f83f09f'
+sha='501b87eab161652292ddbce7180325d420b87670'
 marketplace='henrymckay'
 plugins='design-project maintain-plugin manage-project run-project structure-app write-code'
 
