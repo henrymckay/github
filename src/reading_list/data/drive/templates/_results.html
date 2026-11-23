@@ -1,0 +1,66 @@
+<div id="results" aria-live="polite">
+  {% if row_problem %}
+    <p class="note note-error" role="alert">{{ row_problem[1] }}</p>
+  {% endif %}
+  {% if total == 0 %}
+    <div class="empty">
+      <p class="empty-title">No books yet</p>
+      <p>Add the first one with the form above.</p>
+    </div>
+  {% elif not books %}
+    <div class="empty">
+      <p class="empty-title">No books match</p>
+      <p><a href="/">Clear the search</a> to see all {{ total|count }} books.</p>
+    </div>
+  {% else %}
+    <p class="result-count">
+      {% if searching %}{{ books|length|count }} of {{ total|count }} books{% else %}{{ total|count }} book{{ "s" if total != 1 }}{% endif %}
+    </p>
+    <ul class="books">
+      {% for book in books %}
+        {% set share = progress(book) %}
+        <li class="book" id="book-{{ book.id }}">
+          <div class="book-main">
+            <div class="book-head">
+              <a class="book-title" href="/books/{{ book.id }}">{{ book.title }}</a>
+              <span class="chip chip-{{ book.status.value }}">
+                <span class="dot" aria-hidden="true"></span>{{ book.status.label }}
+              </span>
+            </div>
+            <p class="book-meta">
+              {{ book.author or "Unknown author" }}
+              {% if book.rating %}<span class="sep" aria-hidden="true">·</span><span class="stars" aria-label="Rated {{ book.rating }} of 5">{{ "★" * book.rating }}<span class="stars-off">{{ "★" * (5 - book.rating) }}</span></span>{% endif %}
+              {% if book.finished_on %}<span class="sep" aria-hidden="true">·</span>Finished {{ book.finished_on|day }}{% else %}<span class="sep" aria-hidden="true">·</span>Added {{ book.added_on|day }}{% endif %}
+            </p>
+            <div class="progress-line">
+              {% if share is not none %}
+                <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ book.pages }}" aria-valuenow="{{ book.pages_read }}" aria-label="Progress">
+                  <span style="width: {{ (share * 100)|round(1) }}%"></span>
+                </div>
+                <span class="num progress-text">{{ book.pages_read|count }} / {{ book.pages|count }} pages · {{ share|percent }}</span>
+              {% else %}
+                <span class="muted progress-text">{% if book.pages_read %}{{ book.pages_read|count }} pages read · {% endif %}Page count unknown</span>
+              {% endif %}
+            </div>
+          </div>
+          <form class="book-update" method="post" action="/books/{{ book.id }}/progress">
+            <input type="hidden" name="back" value="{{ path }}">
+            <label class="field compact">
+              <span>Pages read</span>
+              <input name="pages_read" value="{{ book.pages_read }}" inputmode="numeric" pattern="[0-9]*" aria-label="Pages read for {{ book.title }}">
+            </label>
+            <label class="field compact">
+              <span>Status</span>
+              <select name="status" aria-label="Status for {{ book.title }}">
+                {% for choice in Status %}
+                  <option value="{{ choice.value }}" {% if book.status == choice %}selected{% endif %}>{{ choice.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button class="button" type="submit">Save</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>

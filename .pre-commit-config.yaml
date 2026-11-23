@@ -1,0 +1,36 @@
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+repos:
+  - repo: local
+    hooks:
+      - id: coverage
+        name: suite at both coverage levels
+        entry: sh -c 'uv run coverage run -m pytest && uv run coverage report && uv run coverage report --include "src/reading_list/code/transform/*,src/reading_list/code/operate/*,src/reading_list/code/port/*,src/reading_list/code/error/*" --fail-under 100'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, pyi]
+      - id: taplo-format
+        name: taplo fmt
+        entry: uv run taplo fmt
+        language: system
+        types: [toml]
+      - id: taplo-lint
+        name: taplo lint
+        entry: uv run taplo lint
+        language: system
+        types: [toml]
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.5.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_fields.html" import book_fields with context %}
+{% block content %}
+<div class="page-head">
+  <h1>Library</h1>
+</div>
+
+<form class="search card" method="get" action="/" role="search" data-live-search>
+  <label class="field grow">
+    <span>Search</span>
+    <input type="search" name="q" value="{{ query }}" placeholder="Title, author or notes" autocomplete="off">
+  </label>
+  <label class="field">
+    <span>Status</span>
+    <select name="status">
+      <option value="">All</option>
+      {% for choice in Status %}
+        <option value="{{ choice.value }}" {% if status == choice %}selected{% endif %}>{{ choice.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field">
+    <span>Sort by</span>
+    <select name="sort">
+      {% for choice in Order %}
+        <option value="{{ choice.value }}" {% if order == choice %}selected{% endif %}>{{ choice.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <noscript><button class="button" type="submit">Search</button></noscript>
+</form>
+
+<details class="card add" {% if problems or total == 0 %}open{% endif %}>
+  <summary><span class="plus" aria-hidden="true">+</span> Add a book</summary>
+  <form method="post" action="/books" class="add-form">
+    {% if problems %}<p class="note note-error" role="alert">Check the highlighted fields.</p>{% endif %}
+    {{ book_fields(form, problems) }}
+    <div class="actions">
+      <button class="button primary" type="submit">Add book</button>
+    </div>
+  </form>
+</details>
+
+{% include "_results.html" %}
+{% endblock %}

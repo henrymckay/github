@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_fields.html" import book_fields with context %}
+{% block title %}{{ book.title }} · Reading list{% endblock %}
+{% block content %}
+<p class="crumb"><a href="/#book-{{ book.id }}">Library</a></p>
+<div class="page-head">
+  <h1>{{ book.title }}</h1>
+  <p class="muted">Added {{ book.added_on|day }}{% if book.finished_on %} · finished {{ book.finished_on|day }}{% endif %}</p>
+</div>
+<form class="card" method="post" action="/books/{{ book.id }}">
+  {% if problems %}<p class="note note-error" role="alert">Check the highlighted fields.</p>{% endif %}
+  {{ book_fields(form, problems) }}
+  <div class="actions">
+    <button class="button primary" type="submit">Save changes</button>
+    <a class="button" href="/#book-{{ book.id }}">Cancel</a>
+  </div>
+</form>
+<form class="danger card" method="post" action="/books/{{ book.id }}/delete" data-confirm="Delete “{{ book.title }}” from your list? This can't be undone.">
+  <div>
+    <p class="danger-title">Delete this book</p>
+    <p class="muted">Removes it and its progress from your list.</p>
+  </div>
+  <button class="button danger-button" type="submit">Delete book</button>
+</form>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Stats · Reading list{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Stats</h1>
+  <p class="muted">As of {{ today|day }}</p>
+</div>
+
+{% if stats.total == 0 %}
+  <div class="empty card">
+    <p class="empty-title">No books yet</p>
+    <p><a href="/">Add a book</a> and your totals show up here.</p>
+  </div>
+{% else %}
+<section class="tiles" aria-label="Totals">
+  <div class="tile">
+    <p class="tile-label">Books on your list</p>
+    <p class="tile-value num">{{ stats.total|count }}</p>
+    <p class="tile-context">{{ stats.by_status[Status.TO_READ]|count }} still to read</p>
+  </div>
+  <div class="tile">
+    <p class="tile-label">Reading now</p>
+    <p class="tile-value num">{{ stats.by_status[Status.READING]|count }}</p>
+    <p class="tile-context">{{ stats.by_status[Status.FINISHED]|count }} finished in all</p>
+  </div>
+  <div class="tile">
+    <p class="tile-label">Finished in {{ today.year }}</p>
+    <p class="tile-value num">{{ stats.finished_this_year|count }}</p>
+    <p class="tile-context">Since 1 Jan {{ today.year }}</p>
+  </div>
+  <div class="tile">
+    <p class="tile-label">Pages read</p>
+    <p class="tile-value num">{{ stats.pages_read|count }}</p>
+    <p class="tile-context">
+      {% if stats.average_rating is not none %}Average rating {{ "%.1f"|format(stats.average_rating) }} of 5 from {{ stats.rated|count }} rated{% else %}No ratings yet{% endif %}
+    </p>
+  </div>
+</section>
+
+<div class="charts">
+  <section class="card chart-card">
+    <h2>Books finished per month</h2>
+    <p class="muted subtitle">Last 12 months, books</p>
+    <figure class="chart" role="img" aria-label="Books finished each month from {{ bars[0].title }} to {{ bars[-1].title }}: {% for bar in bars %}{{ bar.title }} {{ bar.count }}{{ ', ' if not loop.last }}{% endfor %}.">
+      {% for bar in bars %}
+        <div class="chart-col" title="{{ bar.title }}: {{ bar.count }} finished" aria-hidden="true">
+          <span class="chart-value num">{{ bar.count if bar.count else "" }}</span>
+          <span class="chart-bar" style="height: {{ bar.height }}px"></span>
+          <span class="chart-label">{{ bar.label }}</span>
+        </div>
+      {% endfor %}
+    </figure>
+  </section>
+
+  <section class="card">
+    <h2>By status</h2>
+    <p class="muted subtitle">Books</p>
+    <table class="table">
+      <thead><tr><th scope="col">Status</th><th scope="col" class="right">Books</th><th scope="col" class="right">Share</th></tr></thead>
+      <tbody>
+        {% for choice in Status %}
+          <tr>
+            <td><span class="chip chip-{{ choice.value }}"><span class="dot" aria-hidden="true"></span>{{ choice.label }}</span></td>
+            <td class="right num">{{ stats.by_status[choice]|count }}</td>
+            <td class="right num">{{ (stats.by_status[choice] / stats.total)|percent }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

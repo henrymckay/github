@@ -1,0 +1,1 @@
+"""Adapters satisfying the ports."""

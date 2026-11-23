@@ -1,0 +1,52 @@
+{% macro problem(name) %}
+  {% if problems.get(name) %}<p class="field-error" id="{{ name }}-error">{{ problems[name] }}</p>{% endif %}
+{% endmacro %}
+{% macro invalid(name) %}{% if problems.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}{% endmacro %}
+
+{% macro book_fields(form, problems) %}
+  <div class="grid">
+    <label class="field wide">
+      <span>Title</span>
+      <input name="title" value="{{ form.get('title', '') }}" required maxlength="300" autocomplete="off" {{ invalid('title') }}>
+      {{ problem('title') }}
+    </label>
+    <label class="field wide">
+      <span>Author</span>
+      <input name="author" value="{{ form.get('author', '') }}" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Pages</span>
+      <input name="pages" value="{{ form.get('pages', '') }}" inputmode="numeric" pattern="[0-9]*" placeholder="Unknown" {{ invalid('pages') }}>
+      {{ problem('pages') }}
+    </label>
+    <label class="field">
+      <span>Pages read</span>
+      <input name="pages_read" value="{{ form.get('pages_read', '') }}" inputmode="numeric" pattern="[0-9]*" placeholder="0" {{ invalid('pages_read') }}>
+      {{ problem('pages_read') }}
+    </label>
+    <label class="field">
+      <span>Status</span>
+      <select name="status" {{ invalid('status') }}>
+        {% for choice in Status %}
+          <option value="{{ choice.value }}" {% if form.get('status', 'to_read') == choice.value %}selected{% endif %}>{{ choice.label }}</option>
+        {% endfor %}
+      </select>
+      {{ problem('status') }}
+    </label>
+    <label class="field">
+      <span>Rating</span>
+      <select name="rating" {{ invalid('rating') }}>
+        <option value="">No rating</option>
+        {% for stars in range(5, 0, -1) %}
+          <option value="{{ stars }}" {% if form.get('rating', '') == stars|string %}selected{% endif %}>{{ stars }} of 5</option>
+        {% endfor %}
+      </select>
+      {{ problem('rating') }}
+    </label>
+    <label class="field full">
+      <span>Notes</span>
+      <textarea name="notes" rows="3" maxlength="5000" {{ invalid('notes') }}>{{ form.get('notes', '') }}</textarea>
+      {{ problem('notes') }}
+    </label>
+  </div>
+{% endmacro %}
